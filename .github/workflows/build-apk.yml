@@ -1,5 +1,7 @@
 name: Build Android APK
 
+# Paleidimas: GitHub svetainėje Actions -> "Build Android APK" -> Run workflow
+# (taip pat paleidžiamas automatiškai kiekvieną kartą įkėlus failus).
 on:
   workflow_dispatch:
   push:
@@ -9,40 +11,19 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
-
     steps:
       - name: Atsisiųsti kodą
         uses: actions/checkout@v4
 
-      - name: Įdiegti Linux priklausomybes
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip \
-            openjdk-17-jdk \
-            python3-pip \
-            python3-venv \
-            autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev \
-            libncursesw5-dev cmake \
-            libffi-dev libssl-dev
-
-      - name: Sukurti Python aplinką
-        run: |
-          python3 -m venv .venv
-          .venv/bin/pip install --upgrade pip setuptools wheel
-          .venv/bin/pip install buildozer cython==0.29.33
-
-      - name: Sukompiliuoti APK
-        run: |
-          export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          export BUILDOZER_WARN_ON_ROOT=0
-          .venv/bin/buildozer android debug
+      - name: Sukompiliuoti APK (buildozer)
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
       - name: Išsaugoti APK
         uses: actions/upload-artifact@v4
         with:
           name: StarDefender-apk
-          path: bin/*.apk
-          if-no-files-found: error
-```
+          path: ${{ steps.buildozer.outputs.filename }}
